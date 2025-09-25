@@ -1,17 +1,60 @@
 // Mobile Navigation Toggle
 const hamburger = document.querySelector(".hamburger");
 const navMenu = document.querySelector(".nav-menu");
+const body = document.body;
 
-hamburger.addEventListener("click", () => {
+// Toggle mobile menu
+function toggleMobileMenu() {
+    const isActive = hamburger.classList.contains("active");
+    
     hamburger.classList.toggle("active");
     navMenu.classList.toggle("active");
-});
+    
+    // Prevent body scroll when menu is open
+    if (!isActive) {
+        body.classList.add("menu-open");
+        body.style.top = `-${window.scrollY}px`;
+    } else {
+        body.classList.remove("menu-open");
+        const scrollY = body.style.top;
+        body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+}
 
-// Close mobile menu when clicking on a link
-document.querySelectorAll(".nav-link").forEach(n => n.addEventListener("click", () => {
-    hamburger.classList.remove("active");
-    navMenu.classList.remove("active");
-}));
+if (hamburger && navMenu) {
+    hamburger.addEventListener("click", toggleMobileMenu);
+    
+    // Close mobile menu when clicking on a link
+    document.querySelectorAll(".nav-link").forEach(link => {
+        link.addEventListener("click", () => {
+            hamburger.classList.remove("active");
+            navMenu.classList.remove("active");
+            body.classList.remove("menu-open");
+            body.style.top = '';
+        });
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!navMenu.contains(e.target) && !hamburger.contains(e.target) && navMenu.classList.contains("active")) {
+            hamburger.classList.remove("active");
+            navMenu.classList.remove("active");
+            body.classList.remove("menu-open");
+            body.style.top = '';
+        }
+    });
+    
+    // Close menu on escape key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && navMenu.classList.contains("active")) {
+            hamburger.classList.remove("active");
+            navMenu.classList.remove("active");
+            body.classList.remove("menu-open");
+            body.style.top = '';
+        }
+    });
+}
 
 // Smooth scrolling for navigation links
 document.querySelectorAll("a[href^=\"#\"]").forEach(anchor => {
