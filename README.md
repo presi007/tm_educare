@@ -2,6 +2,11 @@
 
 A modern, responsive, and bilingual website for TM Educare - providing education and healthcare consulting services.
 
+## 🌐 Live Website
+**Main Site**: https://tm-educare.vercel.app  
+**Admin Panel**: https://tm-educare.vercel.app/admin  
+**Test Page**: https://tm-educare.vercel.app/test
+
 ## Features
 
 ### 🌐 Bilingual Support
@@ -156,6 +161,23 @@ Main brand colors are defined in CSS:
 - **Admin panel empty**: Check if localStorage is enabled in browser
 - **Mobile display issues**: Clear browser cache and test again
 
+## 🚀 Deployment
+
+This website is deployed on **Vercel** with the following configuration:
+
+### Quick Deployment
+1. Visit [vercel.com](https://vercel.com) and sign up
+2. Drag and drop the project folder
+3. Vercel automatically deploys the site
+
+### Files Included
+- `vercel.json` - Vercel configuration
+- `package.json` - Project metadata
+- `VERCEL_DEPLOYMENT.md` - Detailed deployment guide
+
+### Testing Deployment
+Visit `https://tm-educare.vercel.app/test` to verify everything works correctly.
+
 ## Contact Information
 
 For technical support or questions about this website:
@@ -164,6 +186,7 @@ For technical support or questions about this website:
 
 ---
 
-**Last Updated**: September 2025
-**Version**: 1.0
-**Developer**: Grace Media
+**Last Updated**: September 2025  
+**Version**: 2.0 (Vercel Deployment)  
+**Developer**: Grace Media  
+**Live Site**: https://tm-educare.vercel.app

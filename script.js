@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Store form data for admin panel
+        // Store form data for admin panel with enhanced persistence
         const formDataObj = {
             name: name,
             email: email,
@@ -250,31 +250,55 @@ document.addEventListener('DOMContentLoaded', function() {
             message: message
         };
         
-        // Save to localStorage for admin panel
-        let submissions = JSON.parse(localStorage.getItem('tm-educare-submissions') || '[]');
-        console.log("Existing submissions:", submissions); // Debug log
-        
+        // Enhanced data storage with multiple fallbacks
         const newSubmission = {
             id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
+            date: new Date().toISOString(),
+            dateFormatted: new Date().toLocaleDateString(),
+            timeFormatted: new Date().toLocaleTimeString(),
             name: name,
             email: email,
             phone: phone || 'Not provided',
             service: service,
             message: message,
-            status: 'new'
+            status: 'new',
+            userAgent: navigator.userAgent,
+            timestamp: Date.now(),
+            url: window.location.href
         };
-        console.log("New submission:", newSubmission); // Debug log
         
-        submissions.push(newSubmission);
-        localStorage.setItem('tm-educare-submissions', JSON.stringify(submissions));
-        console.log("Saved to localStorage. Total submissions:", submissions.length); // Debug log
-        
-        // Also trigger admin panel update if it's open in another tab
-        window.dispatchEvent(new StorageEvent('storage', {
-            key: 'tm-educare-submissions',
-            newValue: JSON.stringify(submissions)
-        }));
+        // Save to multiple storage mechanisms
+        try {
+            // Primary: localStorage
+            let submissions = JSON.parse(localStorage.getItem('tm-educare-submissions') || '[]');
+            console.log("Existing submissions:", submissions.length); // Debug log
+            
+            submissions.push(newSubmission);
+            localStorage.setItem('tm-educare-submissions', JSON.stringify(submissions));
+            console.log("Saved to localStorage. Total submissions:", submissions.length); // Debug log
+            
+            // Secondary: sessionStorage as backup
+            sessionStorage.setItem('tm-educare-last-submission', JSON.stringify(newSubmission));
+            
+            // Tertiary: IndexedDB for better persistence (if available)
+            if ('indexedDB' in window) {
+                saveToIndexedDB(newSubmission);
+            }
+            
+            // Trigger cross-tab communication
+            broadcastSubmission(newSubmission);
+            
+        } catch (error) {
+            console.error('Error saving submission:', error);
+            // Fallback: try to save to sessionStorage only
+            try {
+                sessionStorage.setItem('tm-educare-emergency-submission-' + Date.now(), JSON.stringify(newSubmission));
+                console.log('Saved to emergency sessionStorage');
+            } catch (fallbackError) {
+                console.error('All storage methods failed:', fallbackError);
+                alert('Warning: Your submission may not be saved to the admin panel due to browser restrictions. Please contact us directly.');
+            }
+        }
         
         // Show success message
         showFormMessage("Thank you for your message! We will get back to you soon.", 'success');
@@ -807,3 +831,101 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('keyboard-navigation');
     });
 });
+
+// Enhanced storage functions for better deployment compatibility
+function saveToIndexedDB(submission) {
+    try {
+        const request = indexedDB.open('TMEducareDB', 1);
+        
+        request.onerror = function(event) {
+            console.log('IndexedDB error:', event);
+        };
+        
+        request.onupgradeneeded = function(event) {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('submissions')) {
+                const objectStore = db.createObjectStore('submissions', { keyPath: 'id' });
+                objectStore.createIndex('date', 'date', { unique: false });
+                objectStore.createIndex('status', 'status', { unique: false });
+            }
+        };
+        
+        request.onsuccess = function(event) {
+            const db = event.target.result;
+            const transaction = db.transaction(['submissions'], 'readwrite');
+            const objectStore = transaction.objectStore('submissions');
+            objectStore.add(submission);
+            console.log('Saved to IndexedDB:', submission.id);
+        };
+    } catch (error) {
+        console.log('IndexedDB not available:', error);
+    }
+}
+
+function broadcastSubmission(submission) {
+    try {
+        // BroadcastChannel for cross-tab communication
+        if ('BroadcastChannel' in window) {
+            const channel = new BroadcastChannel('tm-educare-submissions');
+            channel.postMessage({
+                type: 'NEW_SUBMISSION',
+                data: submission
+            });
+            console.log('Broadcasted new submission via BroadcastChannel');
+        }
+        
+        // Storage event for older browsers
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'tm-educare-submissions',
+            newValue: localStorage.getItem('tm-educare-submissions')
+        }));
+        
+        // Custom event for same-page communication
+        window.dispatchEvent(new CustomEvent('tm-educare-new-submission', {
+            detail: submission
+        }));
+        
+    } catch (error) {
+        console.log('Broadcasting failed:', error);
+    }
+}
+
+// Function to retrieve all submissions from various storage sources
+function getAllSubmissions() {
+    let allSubmissions = [];
+    
+    try {
+        // Get from localStorage
+        const localStorageData = localStorage.getItem('tm-educare-submissions');
+        if (localStorageData) {
+            allSubmissions = JSON.parse(localStorageData);
+        }
+        
+        // Get from sessionStorage emergency saves
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && key.startsWith('tm-educare-emergency-submission-')) {
+                try {
+                    const emergencySubmission = JSON.parse(sessionStorage.getItem(key));
+                    // Check if this submission is not already in localStorage
+                    if (!allSubmissions.find(s => s.id === emergencySubmission.id)) {
+                        allSubmissions.push(emergencySubmission);
+                    }
+                } catch (e) {
+                    console.log('Error parsing emergency submission:', e);
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error retrieving submissions:', error);
+    }
+    
+    // Sort by timestamp (newest first)
+    return allSubmissions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
+// Make functions available globally for admin panel
+window.getAllSubmissions = getAllSubmissions;
+window.saveToIndexedDB = saveToIndexedDB;
+window.broadcastSubmission = broadcastSubmission;

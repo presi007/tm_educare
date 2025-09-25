@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TM Educare - Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-item.pass {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+        .test-item.fail {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        .test-item.pending {
+            border-color: #f59e0b;
+            background: #fef3c7;
+        }
+        button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #047857;
+        }
+        .status {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .info {
+            background: #e0f2fe;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .console-output {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 TM Educare Deployment Test</h1>
+        <p>This page helps verify that your TM Educare website is properly deployed and the admin panel will work correctly.</p>
+        
+        <div class="info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Make sure this page is accessed via your hosted URL (not local file)</li>
+                <li>Run all tests below</li>
+                <li>Fix any failing tests before using the admin panel</li>
+                <li>Delete this test file after successful deployment</li>
+            </ol>
+        </div>
+
+        <div class="test-item pending" id="test-url">
+            <h3>🌐 URL Test</h3>
+            <p>Checking if page is accessed via proper hosting...</p>
+            <span class="status" id="url-status">Testing...</span>
+        </div>
+
+        <div class="test-item pending" id="test-storage">
+            <h3>💾 Storage Test</h3>
+            <p>Testing localStorage functionality...</p>
+            <button onclick="testStorage()">Test Storage</button>
+            <span class="status" id="storage-status">Click to test</span>
+        </div>
+
+        <div class="test-item pending" id="test-scripts">
+            <h3>📜 Script Loading Test</h3>
+            <p>Checking if script.js loads properly...</p>
+            <button onclick="testScripts()">Test Scripts</button>
+            <span class="status" id="scripts-status">Click to test</span>
+        </div>
+
+        <div class="test-item pending" id="test-form">
+            <h3>📝 Form Submission Test</h3>
+            <p>Testing form submission and data storage...</p>
+            <button onclick="testFormSubmission()">Test Form</button>
+            <span class="status" id="form-status">Click to test</span>
+        </div>
+
+        <div class="test-item pending" id="test-admin">
+            <h3>👨‍💼 Admin Panel Test</h3>
+            <p>Testing admin panel access...</p>
+            <button onclick="testAdminPanel()">Open Admin Panel</button>
+            <span class="status" id="admin-status">Click to test</span>
+        </div>
+
+        <div class="console-output" id="console-output">
+            <div>🔍 Test Console Output:</div>
+        </div>
+
+        <div class="info">
+            <h3>Next Steps:</h3>
+            <ul>
+                <li>✅ All tests pass: Your deployment is ready!</li>
+                <li>❌ Any test fails: Check ADMIN_TROUBLESHOOTING.md</li>
+                <li>🔧 Need help: Contact tm.educare00@gmail.com</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#60a5fa';
+            output.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateTestStatus(testId, status, message) {
+            const element = document.getElementById(testId);
+            const statusElement = document.getElementById(testId.replace('test-', '') + '-status');
+            
+            element.className = `test-item ${status}`;
+            statusElement.textContent = message;
+            
+            const icon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+            statusElement.textContent = `${icon} ${message}`;
+        }
+
+        // Test 1: URL Test
+        function testURL() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            log(`Current URL: ${window.location.href}`);
+            log(`Protocol: ${protocol}, Hostname: ${hostname}`);
+            
+            if (protocol === 'file:') {
+                updateTestStatus('test-url', 'fail', 'FAIL - Accessed via file:// protocol');
+                log('❌ This page is being accessed as a local file. Upload to web hosting!', 'error');
+                return false;
+            } else if (protocol === 'http:' || protocol === 'https:') {
+                updateTestStatus('test-url', 'pass', 'PASS - Proper web hosting detected');
+                log('✅ Page is properly hosted', 'success');
+                return true;
+            } else {
+                updateTestStatus('test-url', 'fail', 'FAIL - Unknown protocol');
+                log('❌ Unknown protocol detected', 'error');
+                return false;
+            }
+        }
+
+        function testStorage() {
+            try {
+                // Test localStorage
+                const testKey = 'tm-educare-test-' + Date.now();
+                const testData = { test: true, timestamp: Date.now() };
+                
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = localStorage.getItem(testKey);
+                
+                if (retrieved && JSON.parse(retrieved).test === true) {
+                    localStorage.removeItem(testKey);
+                    updateTestStatus('test-storage', 'pass', 'PASS - localStorage working');
+                    log('✅ localStorage test successful', 'success');
+                    return true;
+                } else {
+                    throw new Error('Data retrieval failed');
+                }
+            } catch (error) {
+                updateTestStatus('test-storage', 'fail', 'FAIL - localStorage not working');
+                log(`❌ localStorage test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function testScripts() {
+            // Try to load script.js
+            const script = document.createElement('script');
+            script.src = 'script.js';
+            
+            script.onload = function() {
+                updateTestStatus('test-scripts', 'pass', 'PASS - script.js loaded');
+                log('✅ script.js loaded successfully', 'success');
+                
+                // Test if enhanced functions are available
+                if (window.getAllSubmissions) {
+                    log('✅ Enhanced storage functions available', 'success');
+                } else {
+                    log('⚠️ Enhanced functions not found, but script loaded', 'info');
+                }
+            };
+            
+            script.onerror = function() {
+                updateTestStatus('test-scripts', 'fail', 'FAIL - script.js not found');
+                log('❌ script.js failed to load. Check file exists in same directory', 'error');
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        function testFormSubmission() {
+            try {
+                // Simulate form submission
+                const testSubmission = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    dateFormatted: new Date().toLocaleDateString(),
+                    timeFormatted: new Date().toLocaleTimeString(),
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    phone: '+1234567890',
+                    service: 'education',
+                    message: 'This is a test submission from deployment test',
+                    status: 'new',
+                    timestamp: Date.now(),
+                    url: window.location.href
+                };
+
+                // Save to localStorage
+                let submissions = JSON.parse(localStorage.getItem('tm-educare-submissions') || '[]');
+                submissions.push(testSubmission);
+                localStorage.setItem('tm-educare-submissions', JSON.stringify(submissions));
+
+                updateTestStatus('test-form', 'pass', 'PASS - Test submission created');
+                log('✅ Test form submission saved successfully', 'success');
+                log(`📝 Test submission ID: ${testSubmission.id}`, 'info');
+                
+                return true;
+            } catch (error) {
+                updateTestStatus('test-form', 'fail', 'FAIL - Form submission error');
+                log(`❌ Form submission test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function testAdminPanel() {
+            try {
+                // Check if admin panel exists by trying to open it
+                const baseURL = window.location.origin;
+                const adminURL = `${baseURL}/admin`;
+                log(`🔗 Attempting to open admin panel: ${adminURL}`, 'info');
+                
+                // Open admin panel in new tab
+                const adminWindow = window.open(adminURL, '_blank');
+                
+                if (adminWindow) {
+                    updateTestStatus('test-admin', 'pass', 'PASS - Admin panel opened');
+                    log('✅ Admin panel opened successfully', 'success');
+                    log('👀 Check the admin panel tab to verify it shows your test submission', 'info');
+                    
+                    // Give instructions
+                    setTimeout(() => {
+                        alert('Admin panel opened in new tab!\n\n1. Check if it shows "✅ Connected" status\n2. Look for your test submission\n3. If you see issues, check ADMIN_TROUBLESHOOTING.md');
+                    }, 1000);
+                    
+                    return true;
+                } else {
+                    throw new Error('Popup blocked or admin.html not found');
+                }
+            } catch (error) {
+                updateTestStatus('test-admin', 'fail', 'FAIL - Cannot open admin panel');
+                log(`❌ Admin panel test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Run URL test immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Starting deployment tests...', 'info');
+            testURL();
+        });
+    </script>
+</body>
+</html>

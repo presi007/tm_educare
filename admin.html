@@ -411,15 +411,41 @@
         // Initialize submissions array
         let submissions = [];
 
-        // Load submissions from localStorage if available
+        // Enhanced submission loading with multiple data sources
         function loadSubmissions() {
-            const stored = localStorage.getItem('tm-educare-submissions');
-            console.log("Loading submissions from localStorage:", stored); // Debug log
-            if (stored) {
-                submissions = JSON.parse(stored);
-                console.log("Parsed submissions:", submissions); // Debug log
+            console.log("Loading submissions from all available sources...");
+            
+            // Try to get submissions from the enhanced getAllSubmissions function
+            if (window.getAllSubmissions) {
+                submissions = window.getAllSubmissions();
+                console.log("Loaded from enhanced function:", submissions.length);
+            } else {
+                // Fallback to localStorage only
+                const stored = localStorage.getItem('tm-educare-submissions');
+                console.log("Loading submissions from localStorage:", stored);
+                if (stored) {
+                    submissions = JSON.parse(stored);
+                    console.log("Parsed submissions:", submissions);
+                }
+                
+                // Also check sessionStorage for emergency submissions
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && key.startsWith('tm-educare-emergency-submission-')) {
+                        try {
+                            const emergencySubmission = JSON.parse(sessionStorage.getItem(key));
+                            if (!submissions.find(s => s.id === emergencySubmission.id)) {
+                                submissions.push(emergencySubmission);
+                                console.log("Added emergency submission:", emergencySubmission.id);
+                            }
+                        } catch (e) {
+                            console.log('Error parsing emergency submission:', e);
+                        }
+                    }
+                }
             }
-            console.log("Total submissions loaded:", submissions.length); // Debug log
+            
+            console.log("Total submissions loaded:", submissions.length);
             updateStats();
             renderSubmissions();
         }
@@ -437,43 +463,60 @@
             document.getElementById('medical-inquiries').textContent = submissions.filter(s => s.service === 'medical' || s.service === 'both').length;
         }
 
-        // Render submissions table
+        // Enhanced submission rendering with better date handling
         function renderSubmissions() {
-            console.log("Rendering submissions:", submissions); // Debug log
+            console.log("Rendering submissions:", submissions);
             const tbody = document.getElementById('submissions-tbody');
             const noData = document.getElementById('no-submissions');
             
             if (submissions.length === 0) {
-                console.log("No submissions to display"); // Debug log
+                console.log("No submissions to display");
                 tbody.innerHTML = '';
                 noData.style.display = 'block';
                 return;
             }
 
-            console.log("Displaying", submissions.length, "submissions"); // Debug log
+            console.log("Displaying", submissions.length, "submissions");
             noData.style.display = 'none';
             
-            tbody.innerHTML = submissions.map(submission => `
-                <tr>
-                    <td>${new Date(submission.date).toLocaleDateString()}</td>
-                    <td>${submission.name}</td>
-                    <td><a href="mailto:${submission.email}">${submission.email}</a></td>
-                    <td><a href="tel:${submission.phone}">${submission.phone}</a></td>
-                    <td>${getServiceLabel(submission.service)}</td>
-                    <td><span class="status-badge status-${submission.status}">${getStatusLabel(submission.status)}</span></td>
-                    <td>
-                        <button class="action-btn" onclick="updateStatus(${submission.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="action-btn" onclick="viewMessage(${submission.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="action-btn delete" onclick="deleteSubmission(${submission.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = submissions.map(submission => {
+                // Enhanced date formatting
+                let displayDate;
+                if (submission.dateFormatted) {
+                    displayDate = submission.dateFormatted;
+                } else if (submission.date) {
+                    displayDate = new Date(submission.date).toLocaleDateString();
+                } else {
+                    displayDate = 'Unknown';
+                }
+                
+                // Add time if available
+                if (submission.timeFormatted) {
+                    displayDate += ` ${submission.timeFormatted}`;
+                }
+                
+                return `
+                    <tr title="Submitted from: ${submission.url || 'Unknown'}">
+                        <td>${displayDate}</td>
+                        <td>${submission.name || 'N/A'}</td>
+                        <td><a href="mailto:${submission.email}">${submission.email}</a></td>
+                        <td><a href="tel:${submission.phone}">${submission.phone}</a></td>
+                        <td>${getServiceLabel(submission.service)}</td>
+                        <td><span class="status-badge status-${submission.status}">${getStatusLabel(submission.status)}</span></td>
+                        <td>
+                            <button class="action-btn" onclick="updateStatus(${submission.id})" title="Update Status">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn" onclick="viewMessage(${submission.id})" title="View Message">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteSubmission(${submission.id})" title="Delete Submission">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Helper functions
@@ -552,11 +595,29 @@
             exportSubmissions();
         }
 
-        // Refresh data
+        // Enhanced data refresh with diagnostics
         function refreshData() {
             console.log("Manually refreshing data...");
+            const beforeCount = submissions.length;
+            
+            // Clear any cached data and reload
+            submissions = [];
             loadSubmissions();
-            alert("Data refreshed!");
+            
+            const afterCount = submissions.length;
+            const message = `Data refreshed! Found ${afterCount} submissions (was ${beforeCount})`;
+            console.log(message);
+            
+            // Show diagnostic information
+            const diagnostics = {
+                localStorage: localStorage.getItem('tm-educare-submissions') ? 'Available' : 'Empty',
+                sessionStorage: Object.keys(sessionStorage).filter(k => k.startsWith('tm-educare')).length + ' items',
+                broadcastChannel: 'BroadcastChannel' in window ? 'Supported' : 'Not supported',
+                indexedDB: 'indexedDB' in window ? 'Supported' : 'Not supported'
+            };
+            
+            console.log('Storage diagnostics:', diagnostics);
+            alert(message + '\n\nStorage Status:\n' + Object.entries(diagnostics).map(([k,v]) => `${k}: ${v}`).join('\n'));
         }
 
         // Export submissions to CSV
@@ -649,17 +710,93 @@
             `).join('');
         }
 
-        // Initialize the admin panel
+        // Enhanced admin panel initialization
         document.addEventListener('DOMContentLoaded', function() {
-            loadSubmissions();
+            console.log('Admin panel initializing...');
+            
+            // Load the main script.js functions if not already available
+            if (!window.getAllSubmissions) {
+                console.log('Enhanced functions not available, loading script.js...');
+                const script = document.createElement('script');
+                script.src = 'script.js';
+                script.onload = function() {
+                    console.log('script.js loaded successfully');
+                    loadSubmissions();
+                };
+                script.onerror = function() {
+                    console.log('Failed to load script.js, using fallback methods');
+                    loadSubmissions();
+                };
+                document.head.appendChild(script);
+            } else {
+                console.log('Enhanced functions already available');
+                loadSubmissions();
+            }
+            
+            // Add connection status indicator
+            const header = document.querySelector('.admin-header');
+            const statusDiv = document.createElement('div');
+            statusDiv.id = 'connection-status';
+            statusDiv.style.cssText = 'margin-top: 10px; padding: 5px 10px; border-radius: 5px; font-size: 0.9em;';
+            updateConnectionStatus(statusDiv);
+            header.appendChild(statusDiv);
+            
+            // Update connection status periodically
+            setInterval(() => updateConnectionStatus(statusDiv), 10000);
         });
+        
+        function updateConnectionStatus(statusDiv) {
+            const hasLocalStorage = localStorage.getItem('tm-educare-submissions');
+            const submissionCount = submissions.length;
+            
+            if (submissionCount > 0) {
+                statusDiv.textContent = `✅ Connected - ${submissionCount} submissions loaded`;
+                statusDiv.style.background = '#d1fae5';
+                statusDiv.style.color = '#065f46';
+            } else if (hasLocalStorage) {
+                statusDiv.textContent = '⚠️ Data found but not displaying - check console for errors';
+                statusDiv.style.background = '#fef3c7';
+                statusDiv.style.color = '#92400e';
+            } else {
+                statusDiv.textContent = '❌ No data found - ensure main website and admin panel are on same domain';
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+            }
+        }
 
-        // Listen for storage changes to update in real-time
+        // Enhanced real-time updates with multiple communication channels
         window.addEventListener('storage', function(e) {
             if (e.key === 'tm-educare-submissions') {
+                console.log('Storage event detected, reloading submissions...');
                 loadSubmissions();
             }
         });
+        
+        // BroadcastChannel for better cross-tab communication
+        if ('BroadcastChannel' in window) {
+            const channel = new BroadcastChannel('tm-educare-submissions');
+            channel.addEventListener('message', function(event) {
+                if (event.data.type === 'NEW_SUBMISSION') {
+                    console.log('New submission received via BroadcastChannel:', event.data.data);
+                    loadSubmissions();
+                }
+            });
+        }
+        
+        // Custom event listener for same-page updates
+        window.addEventListener('tm-educare-new-submission', function(event) {
+            console.log('New submission received via custom event:', event.detail);
+            loadSubmissions();
+        });
+        
+        // Periodic refresh to catch any missed updates
+        setInterval(function() {
+            const currentCount = submissions.length;
+            loadSubmissions();
+            if (submissions.length !== currentCount) {
+                console.log('Periodic refresh found new submissions');
+            }
+        }, 30000); // Check every 30 seconds
 
         // Function to add new submission (called from main website)
         function addSubmission(formData) {
