@@ -1,0 +1,30 @@
+{
+  "name": "tm-educare",
+  "version": "1.0.0",
+  "description": "TM Educare - Education & Healthcare Solutions",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build required'",
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "education",
+    "healthcare",
+    "consulting",
+    "study-abroad",
+    "medical-tourism"
+  ],
+  "author": "TM Educare",
+  "license": "MIT",
+  "homepage": "https://tm-educare.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tm-educare.git"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {}
+}
