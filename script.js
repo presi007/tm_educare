@@ -411,15 +411,26 @@ const translations = {
     }
 };
 
+// Keys allowed to contain safe inline HTML like <br> for line breaks
+const TRANSLATION_HTML_KEYS = new Set([
+    'location-address',
+    'location-hours',
+    'contact-location'
+]);
+
 function updateContent(lang) {
     const elements = document.querySelectorAll('[data-translate]');
     elements.forEach(element => {
         const key = element.getAttribute('data-translate');
         if (translations[lang] && translations[lang][key]) {
+            const val = translations[lang][key];
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                element.placeholder = translations[lang][key];
+                element.placeholder = val;
+            } else if (TRANSLATION_HTML_KEYS.has(key) || /<br\s*\/?>(?![^<]*>)/i.test(val)) {
+                // Render trusted keys as HTML to allow line breaks
+                element.innerHTML = val;
             } else {
-                element.textContent = translations[lang][key];
+                element.textContent = val;
             }
         }
     });
