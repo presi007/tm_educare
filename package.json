@@ -3,12 +3,7 @@
   "version": "1.0.0",
   "description": "TM Educare - Education & Healthcare Solutions",
   "main": "index.html",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Static site - no build required'",
-    "start": "vercel dev",
-    "deploy": "vercel --prod"
-  },
+  "scripts": {},
   "keywords": [
     "education",
     "healthcare",
@@ -22,9 +17,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/tm-educare.git"
-  },
-  "engines": {
-    "node": "22.x"
   },
   "dependencies": {}
 }
