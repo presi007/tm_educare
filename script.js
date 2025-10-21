@@ -261,9 +261,9 @@ const translations = {
         "location-title": "Visit Our Office",
         "location-subtitle": "Located in the heart of Lubumbashi, we are easily accessible for in-person consultations",
         "location-address-title": "Our Address",
-        "location-address": "Ville de Lubumbashi<br>Hewa Bora<br>Democratic Republic of Congo",
+        "location-address": "Ville de Lubumbashi, Hewa Bora, Democratic Republic of Congo",
         "location-hours-title": "Office Hours",
-        "location-hours": "Monday - Friday: 8:00 AM - 6:00 PM<br>Saturday: 9:00 AM - 4:00 PM<br>Sunday: Closed",
+        "location-hours": "Monday - Friday: 8:00 AM - 6:00 PM, Saturday: 9:00 AM - 4:00 PM, Sunday: Closed",
         "location-parking-title": "Parking",
         "location-parking": "Free parking available for all visitors",
         "location-directions": "Get Directions",
@@ -277,7 +277,7 @@ const translations = {
         "contact-email-title": "Email Address",
         "contact-email": "tm.educare00@gmail.com",
         "contact-location-title": "Office Location",
-        "contact-location": "Ville de Lubumbashi, Hewa Bora<br>Democratic Republic of Congo",
+        "contact-location": "Ville de Lubumbashi, Hewa Bora, Democratic Republic of Congo",
         
         // WhatsApp Section
         "whatsapp-title": "Contact Us on WhatsApp",
